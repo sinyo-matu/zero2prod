@@ -13,6 +13,7 @@ async fn main() -> std::io::Result<()> {
     let connection_pool = PgPoolOptions::new()
         .connect_timeout(std::time::Duration::from_secs(2))
         .connect_lazy_with(configuration.database.with_db());
+    // init logger
     let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);
     let listener = TcpListener::bind(format!(

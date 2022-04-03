@@ -2,6 +2,7 @@ use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::PgSslMode;
 use sqlx::{postgres::PgConnectOptions, ConnectOptions};
+use tracing::info;
 
 #[derive(serde::Deserialize)]
 pub struct Settings {
@@ -84,6 +85,10 @@ impl DatabaseSettings {
         } else {
             PgSslMode::Prefer
         };
+        info!(
+            "db connection with host: {} username: {} password: {:?} port: {}",
+            &self.host, &self.username, &self.password, self.port
+        );
         PgConnectOptions::new()
             .host(&self.host)
             .username(&self.username)
