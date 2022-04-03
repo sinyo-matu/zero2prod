@@ -42,6 +42,8 @@ pub fn get_configuration() -> Settings {
         .unwrap_or_else(|_| "local".into())
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT");
+    let db_username_env = std::env::var("APP_DATABASE__USERNAME").ok();
+    info!("DB_USERNAME_ENV={:?}", db_username_env);
     let env = config::Environment::with_prefix("app").separator("__");
     let envs = env.collect().expect("failed to collect envs");
     info!("got env: {:?}", &envs);
