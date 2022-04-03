@@ -4,20 +4,20 @@ use sqlx::postgres::PgSslMode;
 use sqlx::{postgres::PgConnectOptions, ConnectOptions};
 use tracing::{info, instrument};
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: Secret<String>,
@@ -33,7 +33,8 @@ pub enum Environment {
     Production,
 }
 
-pub fn get_configuration() -> Result<Settings, config::ConfigError> {
+#[instrument(name = "get configuration")]
+pub fn get_configuration() -> Settings {
     let base_path = std::env::current_dir().expect("Failed to determine current directory");
     let configuration_path = base_path.join("configuration");
     let environment: Environment = std::env::var("APP_ENVIRONMENT")
@@ -46,8 +47,13 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
             config::File::from(configuration_path.join(environment.as_str())).required(true),
         )
         .add_source(config::Environment::with_prefix("app").separator("__"))
-        .build()?;
-    settings.try_deserialize::<Settings>()
+        .build()
+        .expect("failed to read config");
+    let settings = settings
+        .try_deserialize::<Settings>()
+        .expect("failed to read config");
+    info!("successfully get settings :{:?}", &settings);
+    settings
 }
 
 impl Environment {
