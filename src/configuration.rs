@@ -41,12 +41,14 @@ pub fn get_configuration() -> Settings {
         .unwrap_or_else(|_| "local".into())
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT");
+    let env = config::Environment::with_prefix("app").separator("__");
+    info!("got env: {:?}", &env);
     let settings = config::Config::builder()
         .add_source(config::File::from(configuration_path.join("base")).required(true))
         .add_source(
             config::File::from(configuration_path.join(environment.as_str())).required(true),
         )
-        .add_source(config::Environment::with_prefix("app").separator("__"))
+        .add_source(env)
         .build()
         .expect("failed to read config");
     let settings = settings
