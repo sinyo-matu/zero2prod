@@ -1,3 +1,4 @@
+use config::Source;
 use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::PgSslMode;
@@ -42,7 +43,8 @@ pub fn get_configuration() -> Settings {
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT");
     let env = config::Environment::with_prefix("app").separator("__");
-    info!("got env: {:?}", &env);
+    let envs = env.collect().expect("failed to collect envs");
+    info!("got env: {:?}", &envs);
     let settings = config::Config::builder()
         .add_source(config::File::from(configuration_path.join("base")).required(true))
         .add_source(
