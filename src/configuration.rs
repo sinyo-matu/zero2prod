@@ -1,9 +1,8 @@
-use config::Source;
 use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::PgSslMode;
 use sqlx::{postgres::PgConnectOptions, ConnectOptions};
-use tracing::{info, instrument};
+use tracing::info;
 
 #[derive(serde::Deserialize, Debug)]
 pub struct Settings {
@@ -34,7 +33,6 @@ pub enum Environment {
     Production,
 }
 
-#[instrument(name = "get configuration")]
 pub fn get_configuration() -> Settings {
     let base_path = std::env::current_dir().expect("Failed to determine current directory");
     let configuration_path = base_path.join("configuration");
@@ -42,11 +40,7 @@ pub fn get_configuration() -> Settings {
         .unwrap_or_else(|_| "local".into())
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT");
-    let db_username_env = std::env::var("APP_DATABASE__USERNAME").ok();
-    info!("DB_USERNAME_ENV={:?}", db_username_env);
     let env = config::Environment::with_prefix("app").separator("__");
-    let envs = env.collect().expect("failed to collect envs");
-    info!("got env: {:?}", &envs);
     let settings = config::Config::builder()
         .add_source(config::File::from(configuration_path.join("base")).required(true))
         .add_source(
@@ -92,17 +86,12 @@ impl DatabaseSettings {
         options
     }
 
-    #[instrument(name = "load pg connection options", skip(self))]
     pub fn without_db(&self) -> PgConnectOptions {
         let ssl_mode = if self.require_ssl {
             PgSslMode::Require
         } else {
             PgSslMode::Prefer
         };
-        info!(
-            "db connection with host: {} username: {} password: {:?} port: {},ssl_mode: {}",
-            &self.host, &self.username, &self.password, self.port, self.require_ssl
-        );
         PgConnectOptions::new()
             .host(&self.host)
             .username(&self.username)
